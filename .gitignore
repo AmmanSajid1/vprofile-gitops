@@ -1,0 +1,42 @@
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Secrets and private keys
+*.pem
+*.key
+*.p12
+*.pfx
+*secret*.local.yaml
+*secrets*.local.yaml
+
+# Temporary and backup files
+*.tmp
+*.bak
+*.log
+*.orig
+*.rej
+
+# Local Kubernetes configuration
+.kube/
+kubeconfig
+kubeconfig.*
+
+# Terraform files (if accidentally created here)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
