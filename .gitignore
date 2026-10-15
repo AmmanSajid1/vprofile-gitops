@@ -34,6 +34,7 @@ Desktop.ini
 .kube/
 kubeconfig
 kubeconfig.*
+kustomize
 
 # Terraform files (if accidentally created here)
 .terraform/
