@@ -1,0 +1,54 @@
+# deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vprofile-app
+spec:
+  selector:
+    matchLabels:
+      app: vprofile-app
+  template:
+    metadata:
+      labels:
+        app: vprofile-app
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+      containers:
+      - name: tomcat
+        image: 464209272334.dkr.ecr.us-east-1.amazonaws.com/vprofile-app:cfc38bf7f0e5f5dfa6087cfafb850a2e57e9b509
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+
+        startupProbe:
+          httpGet:
+            path: /
+            port: 8080
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 30
+          
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+  
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+          successThreshold: 1
+        

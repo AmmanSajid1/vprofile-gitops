@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vprofile-memcached
+spec:
+  selector:
+    matchLabels:
+      app: vprofile-memcached
+  template:
+    metadata:
+      labels:
+        app: vprofile-memcached
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 11211
+        runAsGroup: 11211
+      containers:
+      - name: memcached
+        image: memcached:1.6.45-alpine
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        ports:
+        - containerPort: 11211
+          name: memcached
+        
+        readinessProbe:
+          tcpSocket:
+            port: 11211
+          initialDelaySeconds: 5
+          periodSeconds: 10
+
+        livenessProbe:
+          tcpSocket:
+            port: 11211
+          initialDelaySeconds: 15
+          periodSeconds: 20

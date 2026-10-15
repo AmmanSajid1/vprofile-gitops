@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vprofile-rabbitmq
+spec:
+  selector:
+    matchLabels:
+      app: vprofile-rabbitmq
+  template:
+    metadata:
+      labels:
+        app: vprofile-rabbitmq
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+      containers:
+      - name: rabbitmq
+        image: rabbitmq:4.3-management
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        ports:
+        - containerPort: 5672
+          name: amqp
+        - containerPort: 15672
+          name: management
+
+        # Startup probe ensures the container is fully started before readiness and liveness probes kick in
+        startupProbe:
+          exec:
+            command: ["rabbitmq-diagnostics", "-q", "check_running"]
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 18
+        
+        # Readiness Probe ensures traffic only hits fully operational RabbitMQ
+        readinessProbe:
+          exec:
+            command: ["rabbitmq-diagnostics", "-q", "check_running"]
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        # Liveness Probe can use the lighter ping to check if Erlang crashed completely
+        livenessProbe:
+          exec:
+            command: ["rabbitmq-diagnostics", "-q", "ping"]
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 3
