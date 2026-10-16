@@ -5,11 +5,14 @@ resources:
   - ../../base
   - namespace.yaml
   - ingress.yaml
-
+  - secret-store.yaml
+  - rds-external-secret.yaml
+  - rabbitmq-external-secret.yaml
 patches:
   - path: app-resources.yaml
   - path: rabbitmq-resources.yaml
   - path: memcached-resources.yaml
+  - path: app-env.yaml
 
 
 namespace: dev
@@ -24,4 +27,4 @@ replicas:
 
 images:
   - name: 464209272334.dkr.ecr.us-east-1.amazonaws.com/vprofile-app
-    newTag: f11d30405b97e347b90239acabd32825891a7fd3
+    newTag: 7cfa585b5afed864d12f16909e99a8d0b941be76

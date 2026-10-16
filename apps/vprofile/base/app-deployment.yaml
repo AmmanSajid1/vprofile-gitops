@@ -18,6 +18,30 @@ spec:
       containers:
       - name: tomcat
         image: 464209272334.dkr.ecr.us-east-1.amazonaws.com/vprofile-app:cfc38bf7f0e5f5dfa6087cfafb850a2e57e9b509
+        env:
+          - name: JDBC_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: vprofile-rds-credentials
+                key: username
+
+          - name: JDBC_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: vprofile-rds-credentials
+                key: password
+
+          - name: RABBITMQ_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: vprofile-rabbitmq-credentials
+                key: username
+
+          - name: RABBITMQ_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: vprofile-rabbitmq-credentials
+                key: password
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -34,7 +58,7 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 3
           failureThreshold: 30
-          
+
         livenessProbe:
           httpGet:
             path: /

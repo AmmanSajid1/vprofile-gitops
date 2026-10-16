@@ -18,6 +18,18 @@ spec:
       containers:
       - name: rabbitmq
         image: rabbitmq:4.3-management
+        env:
+          - name: RABBITMQ_DEFAULT_USER
+            valueFrom:
+              secretKeyRef:
+                name: vprofile-rabbitmq-credentials
+                key: username
+
+          - name: RABBITMQ_DEFAULT_PASS
+            valueFrom:
+              secretKeyRef:
+                name: vprofile-rabbitmq-credentials
+                key: password
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

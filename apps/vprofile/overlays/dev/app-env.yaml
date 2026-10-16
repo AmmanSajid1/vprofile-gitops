@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vprofile-app
+spec:
+  template:
+    spec:
+      containers:
+        - name: tomcat
+          env:
+            - name: JDBC_URL
+              value: "jdbc:mysql://vprofile-nonprod-mysql.c9u04gmes25t.us-east-1.rds.amazonaws.com:3306/accounts?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull"
