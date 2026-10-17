@@ -22,13 +22,13 @@ spec:
           - name: JDBC_USERNAME
             valueFrom:
               secretKeyRef:
-                name: vprofile-rds-credentials
+                name: vprofile-mysql-app-credentials
                 key: username
 
           - name: JDBC_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: vprofile-rds-credentials
+                name: vprofile-mysql-app-credentials
                 key: password
 
           - name: RABBITMQ_USERNAME
