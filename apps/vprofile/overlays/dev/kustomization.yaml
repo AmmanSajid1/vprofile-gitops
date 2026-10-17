@@ -9,6 +9,7 @@ resources:
   - rds-external-secret.yaml
   - rabbitmq-external-secret.yaml
   - mysql-app-external-secret.yaml
+  - flyway-service-account.yaml
 patches:
   - path: app-resources.yaml
   - path: rabbitmq-resources.yaml
