@@ -27,4 +27,4 @@ replicas:
 
 images:
   - name: 464209272334.dkr.ecr.us-east-1.amazonaws.com/vprofile-app
-    newTag: 305ab23dccb1b9bb8770dd614291d2b79d4c0331
+    newTag: 1d1acecea32550387dde1e19da977162ce666e87
