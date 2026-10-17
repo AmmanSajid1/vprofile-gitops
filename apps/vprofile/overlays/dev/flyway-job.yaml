@@ -1,12 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: vprofile-db-migration-v1
+  name: vprofile-db-migration-v2
   namespace: dev
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation, HookSucceeded
 spec:
   backoffLimit: 1
-  ttlSecondsAfterFinished: 3600
-
   template:
     spec:
       serviceAccountName: vprofile-flyway
@@ -22,6 +24,11 @@ spec:
           args:
             - |
               umask 077
+              aws ssm get-parameter \
+                --name /vprofile/nonprod/rds/endpoint \
+                --region us-east-1 \
+                --query Parameter.Value --output text > /credentials/rds-endpoint
+              
 
               aws secretsmanager get-secret-value \
                 --secret-id vprofile/nonprod/mysql-migrator \
@@ -42,6 +49,14 @@ spec:
                   "flyway.user=" + escape(data["username"]) + "\n" +
                   "flyway.password=" + escape(data["password"]) + "\n"
               )
+              endpoint = Path("/credentials/rds-endpoint").read_text().strip()
+
+              with Path("/credentials/flyway.conf").open("a") as f:
+                  f.write(
+                      "flyway.url=jdbc:mysql://"
+                      + endpoint
+                      + ":3306/accounts?sslMode=REQUIRED&allowPublicKeyRetrieval=true\n"
+                  )
               PY
 
               rm -f /credentials/secret.json
@@ -54,7 +69,6 @@ spec:
           image: 464209272334.dkr.ecr.us-east-1.amazonaws.com/vprofile-flyway:b3b281e5e7ba01fdcc7a8b7785cdcce8b329767b
           args:
             - -configFiles=/credentials/flyway.conf
-            - -url=jdbc:mysql://vprofile-nonprod-mysql.c9u04gmes25t.us-east-1.rds.amazonaws.com:3306/accounts?sslMode=REQUIRED&allowPublicKeyRetrieval=true
             - migrate
           volumeMounts:
             - name: credentials

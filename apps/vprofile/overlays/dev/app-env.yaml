@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: vprofile-app
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   template:
     spec:
@@ -9,4 +11,7 @@ spec:
         - name: tomcat
           env:
             - name: JDBC_URL
-              value: "jdbc:mysql://vprofile-nonprod-mysql.c9u04gmes25t.us-east-1.rds.amazonaws.com:3306/accounts?useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull"
+              valueFrom:
+                secretKeyRef:
+                  name: vprofile-rds-config
+                  key: JDBC_URL

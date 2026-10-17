@@ -1,11 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: vprofile-mysql-bootstrap-v1
+  name: vprofile-mysql-bootstrap-v2
   namespace: dev
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "-2"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation, HookSucceeded
 spec:
   backoffLimit: 1
-  ttlSecondsAfterFinished: 3600
   template:
     spec:
       serviceAccountName: vprofile-mysql-bootstrap
@@ -19,8 +22,20 @@ spec:
           args:
             - |
               umask 077
+              aws ssm get-parameter \
+                --name /vprofile/nonprod/rds/endpoint \
+                --region us-east-1 \
+                --query Parameter.Value --output text > /credentials/rds-endpoint
+
+              aws ssm get-parameter \
+                --name /vprofile/nonprod/rds/master-secret-arn \
+                --region us-east-1 \
+                --query Parameter.Value --output text > /credentials/master-secret-arn
+
+              MASTER_SECRET_ARN="$(cat /credentials/master-secret-arn)"
+
               aws secretsmanager get-secret-value \
-                --secret-id rds!db-87405571-3317-4199-9b2d-14bb1c15399b \
+                --secret-id "$MASTER_SECRET_ARN" \
                 --region us-east-1 \
                 --query SecretString --output text > /credentials/master.json
 
@@ -58,7 +73,7 @@ spec:
               migrator = load("migrator")
 
               connection = pymysql.connect(
-                  host="vprofile-nonprod-mysql.c9u04gmes25t.us-east-1.rds.amazonaws.com",
+                  host=open("/credentials/rds-endpoint").read().strip(),
                   user=master["username"],
                   password=master["password"],
                   autocommit=True,

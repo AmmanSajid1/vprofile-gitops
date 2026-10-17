@@ -6,12 +6,15 @@ resources:
   - namespace.yaml
   - ingress.yaml
   - secret-store.yaml
-  - rds-external-secret.yaml
   - rabbitmq-external-secret.yaml
   - mysql-app-external-secret.yaml
-  - flyway-service-account.yaml
   - flyway-job.yaml
+  - mysql-bootstrap-job.yaml
+  - flyway-service-account.yaml
   - mysql-bootstrap-serviceaccount.yaml
+  - ssm-secret-store.yaml
+  - rds-config-external-secret.yaml
+  
 patches:
   - path: app-resources.yaml
   - path: rabbitmq-resources.yaml
