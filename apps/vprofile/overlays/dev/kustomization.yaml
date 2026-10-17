@@ -10,6 +10,8 @@ resources:
   - rabbitmq-external-secret.yaml
   - mysql-app-external-secret.yaml
   - flyway-service-account.yaml
+  - flyway-job.yaml
+  - mysql-bootstrap-serviceaccount.yaml
 patches:
   - path: app-resources.yaml
   - path: rabbitmq-resources.yaml

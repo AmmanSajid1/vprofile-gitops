@@ -1,0 +1,67 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vprofile-db-migration-v1
+  namespace: dev
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 3600
+
+  template:
+    spec:
+      serviceAccountName: vprofile-flyway
+      automountServiceAccountToken: false
+      restartPolicy: Never
+
+      initContainers:
+        - name: fetch-db-credentials
+          image: public.ecr.aws/aws-cli/aws-cli:latest
+          command:
+            - /bin/sh
+            - -ec
+          args:
+            - |
+              umask 077
+
+              aws secretsmanager get-secret-value \
+                --secret-id vprofile/nonprod/mysql-migrator \
+                --region us-east-1 \
+                --query SecretString \
+                --output text > /credentials/secret.json
+
+              python3 - <<'PY'
+              import json
+              from pathlib import Path
+
+              data = json.loads(Path("/credentials/secret.json").read_text())
+
+              def escape(value):
+                  return str(value).replace("\\", "\\\\").replace("\n", "\\n")
+
+              Path("/credentials/flyway.conf").write_text(
+                  "flyway.user=" + escape(data["username"]) + "\n" +
+                  "flyway.password=" + escape(data["password"]) + "\n"
+              )
+              PY
+
+              rm -f /credentials/secret.json
+          volumeMounts:
+            - name: credentials
+              mountPath: /credentials
+
+      containers:
+        - name: flyway
+          image: 464209272334.dkr.ecr.us-east-1.amazonaws.com/vprofile-flyway:b3b281e5e7ba01fdcc7a8b7785cdcce8b329767b
+          args:
+            - -configFiles=/credentials/flyway.conf
+            - -url=jdbc:mysql://vprofile-nonprod-mysql.c9u04gmes25t.us-east-1.rds.amazonaws.com:3306/accounts?sslMode=REQUIRED&allowPublicKeyRetrieval=true
+            - migrate
+          volumeMounts:
+            - name: credentials
+              mountPath: /credentials
+              readOnly: true
+
+      volumes:
+        - name: credentials
+          emptyDir:
+            medium: Memory
