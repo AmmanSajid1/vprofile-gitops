@@ -8,6 +8,7 @@ resources:
   - secret-store.yaml
   - rds-external-secret.yaml
   - rabbitmq-external-secret.yaml
+  - mysql-app-external-secret.yaml
 patches:
   - path: app-resources.yaml
   - path: rabbitmq-resources.yaml
