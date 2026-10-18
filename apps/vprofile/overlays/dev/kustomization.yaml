@@ -36,7 +36,7 @@ replicas:
 images:
 - name: 464209272334.dkr.ecr.us-east-1.amazonaws.com/vprofile-app
   newName: 464209272334.dkr.ecr.us-east-1.amazonaws.com/vprofile-app
-  newTag: 3c2a04911ae0015a45c817187518f41c3cfea8c5
+  newTag: b17eb539ba4dc5c3569a8fafca3959b853966d50
 - name: 464209272334.dkr.ecr.us-east-1.amazonaws.com/vprofile-flyway
   newName: 464209272334.dkr.ecr.us-east-1.amazonaws.com/vprofile-flyway
-  newTag: 3c2a04911ae0015a45c817187518f41c3cfea8c5
+  newTag: b17eb539ba4dc5c3569a8fafca3959b853966d50
