@@ -2,39 +2,41 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - ../../base
-  - namespace.yaml
-  - ingress.yaml
-  - secret-store.yaml
-  - rabbitmq-external-secret.yaml
-  - mysql-app-external-secret.yaml
-  - flyway-job.yaml
-  - mysql-bootstrap-job.yaml
-  - flyway-service-account.yaml
-  - mysql-bootstrap-serviceaccount.yaml
-  - ssm-secret-store.yaml
-  - rds-config-external-secret.yaml
+- ../../base
+- namespace.yaml
+- ingress.yaml
+- secret-store.yaml
+- rabbitmq-external-secret.yaml
+- mysql-app-external-secret.yaml
+- flyway-job.yaml
+- mysql-bootstrap-job.yaml
+- flyway-service-account.yaml
+- mysql-bootstrap-serviceaccount.yaml
+- ssm-secret-store.yaml
+- rds-config-external-secret.yaml
   
 patches:
-  - path: app-resources.yaml
-  - path: rabbitmq-resources.yaml
-  - path: memcached-resources.yaml
-  - path: app-env.yaml
+- path: app-resources.yaml
+- path: rabbitmq-resources.yaml
+- path: memcached-resources.yaml
+- path: app-env.yaml
 
 
 namespace: dev
 
 replicas:
-  - name: vprofile-memcached
-    count: 1
-  - name: vprofile-rabbitmq
-    count: 1
-  - name: vprofile-app
-    count: 1
+- count: 1
+  name: vprofile-memcached
+- count: 1
+  name: vprofile-rabbitmq
+- count: 1
+  name: vprofile-app
+
 
 images:
-  - name: 464209272334.dkr.ecr.us-east-1.amazonaws.com/vprofile-app
-    newTag: 1d1acecea32550387dde1e19da977162ce666e87
-
-  - name: 464209272334.dkr.ecr.us-east-1.amazonaws.com/vprofile-flyway
-    newTag: b3b281e5e7ba01fdcc7a8b7785cdcce8b329767b
+- name: 464209272334.dkr.ecr.us-east-1.amazonaws.com/vprofile-app
+  newName: 464209272334.dkr.ecr.us-east-1.amazonaws.com/vprofile-app
+  newTag: 3c2a04911ae0015a45c817187518f41c3cfea8c5
+- name: 464209272334.dkr.ecr.us-east-1.amazonaws.com/vprofile-flyway
+  newName: 464209272334.dkr.ecr.us-east-1.amazonaws.com/vprofile-flyway
+  newTag: 3c2a04911ae0015a45c817187518f41c3cfea8c5
