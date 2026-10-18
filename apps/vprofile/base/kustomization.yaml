@@ -8,4 +8,5 @@ resources:
   - rabbitmq-service.yaml
   - memcached-deployment.yaml
   - memcached-service.yaml
+  - rabbitmq-servicemonitor.yaml
   
