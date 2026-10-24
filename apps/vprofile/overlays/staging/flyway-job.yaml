@@ -1,0 +1,81 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vprofile-db-migration-v2
+  namespace: staging
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation, HookSucceeded
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      serviceAccountName: vprofile-flyway
+      automountServiceAccountToken: false
+      restartPolicy: Never
+
+      initContainers:
+        - name: fetch-db-credentials
+          image: public.ecr.aws/aws-cli/aws-cli:latest
+          command:
+            - /bin/sh
+            - -ec
+          args:
+            - |
+              umask 077
+              aws ssm get-parameter \
+                --name /vprofile/staging/rds/endpoint \
+                --region us-east-1 \
+                --query Parameter.Value --output text > /credentials/rds-endpoint
+              
+
+              aws secretsmanager get-secret-value \
+                --secret-id vprofile/staging/mysql-migrator \
+                --region us-east-1 \
+                --query SecretString \
+                --output text > /credentials/secret.json
+
+              python3 - <<'PY'
+              import json
+              from pathlib import Path
+
+              data = json.loads(Path("/credentials/secret.json").read_text())
+
+              def escape(value):
+                  return str(value).replace("\\", "\\\\").replace("\n", "\\n")
+
+              Path("/credentials/flyway.conf").write_text(
+                  "flyway.user=" + escape(data["username"]) + "\n" +
+                  "flyway.password=" + escape(data["password"]) + "\n"
+              )
+              endpoint = Path("/credentials/rds-endpoint").read_text().strip()
+
+              with Path("/credentials/flyway.conf").open("a") as f:
+                  f.write(
+                      "flyway.url=jdbc:mysql://"
+                      + endpoint
+                      + ":3306/accounts?sslMode=REQUIRED&allowPublicKeyRetrieval=true\n"
+                  )
+              PY
+
+              rm -f /credentials/secret.json
+          volumeMounts:
+            - name: credentials
+              mountPath: /credentials
+
+      containers:
+        - name: flyway
+          image: 464209272334.dkr.ecr.us-east-1.amazonaws.com/vprofile-flyway:b3b281e5e7ba01fdcc7a8b7785cdcce8b329767b
+          args:
+            - -configFiles=/credentials/flyway.conf
+            - migrate
+          volumeMounts:
+            - name: credentials
+              mountPath: /credentials
+              readOnly: true
+
+      volumes:
+        - name: credentials
+          emptyDir:
+            medium: Memory
