@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vprofile-app
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  template:
+    spec:
+      containers:
+        - name: tomcat
+          env:
+            - name: JDBC_URL
+              valueFrom:
+                secretKeyRef:
+                  name: vprofile-rds-config
+                  key: JDBC_URL

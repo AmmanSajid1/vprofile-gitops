@@ -1,0 +1,125 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vprofile-mysql-bootstrap-v2
+  namespace: staging
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "-2"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation, HookSucceeded
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      serviceAccountName: vprofile-mysql-bootstrap
+      automountServiceAccountToken: false
+      restartPolicy: Never
+
+      initContainers:
+        - name: fetch-credentials
+          image: public.ecr.aws/aws-cli/aws-cli:latest
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              umask 077
+              aws ssm get-parameter \
+                --name /vprofile/staging/rds/endpoint \
+                --region us-east-1 \
+                --query Parameter.Value --output text > /credentials/rds-endpoint
+
+              aws ssm get-parameter \
+                --name /vprofile/staging/rds/master-secret-arn \
+                --region us-east-1 \
+                --query Parameter.Value --output text > /credentials/master-secret-arn
+
+              MASTER_SECRET_ARN="$(cat /credentials/master-secret-arn)"
+
+              aws secretsmanager get-secret-value \
+                --secret-id "$MASTER_SECRET_ARN" \
+                --region us-east-1 \
+                --query SecretString --output text > /credentials/master.json
+
+              aws secretsmanager get-secret-value \
+                --secret-id vprofile/staging/mysql-app \
+                --region us-east-1 \
+                --query SecretString --output text > /credentials/app.json
+
+              aws secretsmanager get-secret-value \
+                --secret-id vprofile/staging/mysql-migrator \
+                --region us-east-1 \
+                --query SecretString --output text > /credentials/migrator.json
+          volumeMounts:
+            - name: credentials
+              mountPath: /credentials
+
+      containers:
+        - name: mysql-bootstrap
+          image: python:3.12-slim
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              pip install --quiet --no-cache-dir pymysql
+
+              python - <<'PY'
+              import json
+              import pymysql
+
+              def load(name):
+                  with open(f"/credentials/{name}.json") as f:
+                      return json.load(f)
+
+              master = load("master")
+              app = load("app")
+              migrator = load("migrator")
+
+              connection = pymysql.connect(
+                  host=open("/credentials/rds-endpoint").read().strip(),
+                  user=master["username"],
+                  password=master["password"],
+                  autocommit=True,
+              )
+
+              def quote(value):
+                  return "'" + value.replace("\\", "\\\\").replace("'", "''") + "'"
+
+              with connection.cursor() as cursor:
+                  cursor.execute("CREATE DATABASE IF NOT EXISTS accounts")
+
+                  for name, credentials in [
+                      ("vprofile_app", app),
+                      ("vprofile_migrator", migrator),
+                  ]:
+                      if credentials["username"] != name:
+                          raise ValueError(f"Unexpected username for {name}")
+
+                      password = quote(credentials["password"])
+                      cursor.execute(
+                          f"CREATE USER IF NOT EXISTS '{name}'@'%' IDENTIFIED BY {password}"
+                      )
+                      cursor.execute(
+                          f"ALTER USER '{name}'@'%' IDENTIFIED BY {password}"
+                      )
+
+                  cursor.execute(
+                      "GRANT SELECT, INSERT, UPDATE, DELETE "
+                      "ON accounts.* TO 'vprofile_app'@'%'"
+                  )
+
+                  cursor.execute(
+                      "GRANT SELECT, INSERT, UPDATE, DELETE, "
+                      "CREATE, ALTER, DROP, INDEX, REFERENCES "
+                      "ON accounts.* TO 'vprofile_migrator'@'%'"
+                  )
+
+              connection.close()
+              print("Database users and permissions configured successfully.")
+              PY
+          volumeMounts:
+            - name: credentials
+              mountPath: /credentials
+              readOnly: true
+
+      volumes:
+        - name: credentials
+          emptyDir:
+            medium: Memory
