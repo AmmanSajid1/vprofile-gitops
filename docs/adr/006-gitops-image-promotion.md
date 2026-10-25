@@ -95,11 +95,23 @@ Rejected in favour of immutable commit SHA tags.
 - Deployment depends on the availability of GitHub and Argo CD.
 - Pull requests introduce a review step before deployment.
 - CI must handle existing branches, duplicate pull requests and concurrent workflow runs.
-- Automatic synchronisation is currently configured for development; promotion to other environments requires separate policies.
+- Development and staging use separate GitOps promotion processes. Development image updates are proposed automatically after CI, while staging promotion is manually triggered and requires a separate pull request. Argo CD reconciles each environment when its infrastructure is running.
 
 ## Future improvements
 
 - Add automated validation of GitOps pull requests.
-- Introduce staging and production promotion workflows.
+- Introduce a production promotion workflow when the production environment is implemented.
 - Add deployment notifications and failure reporting.
 - Implement automated smoke tests following successful Argo CD synchronisation.
+
+## Implementation update — Staging promotion
+
+A separate, manually triggered GitHub Actions workflow has since been implemented for staging promotion.
+
+The workflow reads the approved development application and Flyway image versions, verifies their availability in Amazon ECR, and creates a GitOps pull request updating the staging overlay.
+
+Both environments use the same immutable image artifacts, without rebuilding them during promotion.
+
+If staging already matches development, the workflow completes without creating another pull request.
+
+The staging promotion design and implementation are documented in the [vprofile-app release pipeline](https://github.com/AmmanSajid1/vprofile-app/blob/main/docs/release-pipeline.md) and [ADR 004 — Manual Staging Promotion](https://github.com/AmmanSajid1/vprofile-app/blob/main/docs/adr/004-manual-staging-promotion.md).
